@@ -1,0 +1,3 @@
+[submodule "frida_ios_dump"]
+	path = frida_ios_dump
+	url = https://github.com/miticollo/frida-ios-dump

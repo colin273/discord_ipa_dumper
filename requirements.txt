@@ -1,0 +1,8 @@
+# For frida-ios-dump
+frida-tools
+
+# For this script
+python-dotenv
+discord.py
+requests
+paramiko
