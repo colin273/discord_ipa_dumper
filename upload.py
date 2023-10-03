@@ -67,6 +67,8 @@ def upload_indirect(ipa_path: Path, webhook: SyncWebhook, is_testflight: bool, v
     vps_user = os.getenv("VPS_USERNAME")
     vps_pass = os.getenv("VPS_PASSWORD")
 
+    print("Starting upload to VPS...")
+
     # Create SSH/SFTP client
     client = SSHClient()
     client.load_system_host_keys()
@@ -97,6 +99,7 @@ def upload_indirect(ipa_path: Path, webhook: SyncWebhook, is_testflight: bool, v
 
     # Close SSH client
     client.close()
+    print("Uploaded IPA to VPS.")
 
     # Upload link for IPA to ipa.aspy.dev
     # SHA256 for integrity verification (in case anyone cares)
@@ -132,6 +135,7 @@ def upload_ipa(ipa_path: Path, is_testflight: bool, version: str, build: str):
     :param version: Version number
     :param build: Build ID
     """
+    print("Uploading IPA...")
     webhook_url_varname = f'{"TESTFLIGHT" if is_testflight else "STABLE"}_WEBHOOK_URL'
     webhook = SyncWebhook.from_url(os.getenv(webhook_url_varname))
 

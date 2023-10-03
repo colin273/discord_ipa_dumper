@@ -13,6 +13,7 @@ from user_prompt import user_choice
 
 
 def rename_ipa(ipa_path: Path, is_testflight: bool) -> tuple[Path, str, str]:
+    print("Renaming IPA...")
     with ZipFile(ipa_path) as ipa_zip:
         # Technically I should search through the zip file's structure
         # in case this ever needs to work for other apps besides Discord
@@ -33,23 +34,26 @@ def rename_ipa(ipa_path: Path, is_testflight: bool) -> tuple[Path, str, str]:
             # Rename IPA
             new_ipa_path = ipa_path.joinpath("..", new_ipa_name).resolve()
             os.rename(ipa_path, new_ipa_path)
+            print("IPA renamed.")
 
             return new_ipa_path, version_number, build_id
 
 
 class DiscordDumperApplication(DecrypterApplication):
+    def __init__(self, is_testflight: bool):
+        self.is_testflight = is_testflight
+        super().__init__()
+
     def _exit(self, exit_status: int) -> None:
         # Intercept exiting if successful to process the IPA further
         if exit_status == 0:
-            is_testflight = bool(user_choice("Is this a TestFlight build?", ["No", "Yes"]))
-
             # Rename output IPA with build ID
             cwd_path = Path(os.getcwd())
             ipa_name = f"{self._bundle_id}_{self._version}.ipa"
-            new_ipa_path, version, build = rename_ipa(cwd_path / ipa_name, is_testflight)
+            new_ipa_path, version, build = rename_ipa(cwd_path / ipa_name, self.is_testflight)
 
             try:
-                upload_ipa(new_ipa_path, is_testflight, version, build)
+                upload_ipa(new_ipa_path, self.is_testflight, version, build)
                 os.remove(new_ipa_path)
             except Exception as err:
                 print(err.__traceback__)
@@ -62,11 +66,23 @@ def main():
     # Environment variables specify webhook URLs
     load_dotenv()
 
+    is_testflight = False
+
+    try:
+        # Set is_testflight from arguments
+        flag_idx = sys.argv.index("--testflight")
+        is_testflight = bool(int(sys.argv[flag_idx + 1]))
+        # Clean up args to avoid any interference with Frida
+        sys.argv = sys.argv[:flag_idx] + sys.argv[flag_idx + 2:]
+    except ValueError:
+        # No arguments, so prompt user for TestFlight status
+        is_testflight = bool(user_choice("Is this a TestFlight build?", ["No", "Yes"]))
+
     # Patching sys.argv is terribly hacky, but it works
     sys.argv += ["-U", "-f", "com.hammerandchisel.discord"]
 
     # Decrypt the app with Frida over USB
-    app = DiscordDumperApplication()
+    app = DiscordDumperApplication(is_testflight)
     app.run()
 
 
