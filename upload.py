@@ -139,9 +139,14 @@ def upload_ipa(ipa_path: Path, is_testflight: bool, version: str, build: str):
     webhook_url_varname = f'{"TESTFLIGHT" if is_testflight else "STABLE"}_WEBHOOK_URL'
     webhook = SyncWebhook.from_url(os.getenv(webhook_url_varname))
 
-    ipa_size = ipa_path.stat().st_size
+    # ipa_size = ipa_path.stat().st_size
 
-    if ipa_size > HUNDRED_MB:  # Too big to upload directly
-        upload_indirect(ipa_path, webhook, is_testflight, version, build)
-    else:
-        upload_direct(ipa_path, webhook, is_testflight, version, build)
+    # File size check is no longer relevant.
+    # Discord's crackdown on external usage of its CDN means that
+    # uploading IPAs directly to Discord is no longer reliable for CI purposes.
+    # Even if the file is small enough to upload directly,
+    # an external server is more useful.
+    # if ipa_size > HUNDRED_MB:  # Too big to upload directly
+    upload_indirect(ipa_path, webhook, is_testflight, version, build)
+    # else:
+    #     upload_direct(ipa_path, webhook, is_testflight, version, build)
