@@ -65,7 +65,6 @@ def upload_indirect(ipa_path: Path, webhook: SyncWebhook, is_testflight: bool, v
     vps_host = os.getenv("VPS_HOSTNAME")
     vps_port = int(os.getenv("VPS_PORT"))
     vps_user = os.getenv("VPS_USERNAME")
-    vps_pass = os.getenv("VPS_PASSWORD")
 
     print("Starting upload to VPS...")
 
@@ -95,7 +94,7 @@ def upload_indirect(ipa_path: Path, webhook: SyncWebhook, is_testflight: bool, v
     sftp_session.close()
 
     # Move IPA to appropriate folder on VPS using SSH
-    client.exec_command(f"echo {quote(vps_pass)} | sudo -S mv {vps_ipa_path} {vps_dest_path}")
+    client.exec_command(f"mv {vps_ipa_path} {vps_dest_path}")
 
     # Close SSH client
     client.close()

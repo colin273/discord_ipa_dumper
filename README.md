@@ -41,7 +41,6 @@ The variables are:
 - `VPS_HOSTNAME`: hostname or IP address of the VPS that hosts oversized IPAs
 - `VPS_PORT`: SSH port for the VPS
 - `VPS_USERNAME`: username for your account on the VPS
-- `VPS_PASSWORD`: password for your account on the VPS
 
 Frida must also be installed on your jailbroken iOS device(s).
 
