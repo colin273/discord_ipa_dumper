@@ -1,18 +1,21 @@
 # Discord IPA Dumper
 
-Script to dump Discord IPAs from a jailbroken iOS device
-using [frida-ios-dump](https://github.com/miticollo/frida-ios-dump)
-and upload them to a Discord webhook. If the IPA is too big, then the script
-will upload the IPA to a service such as https://ipa.aspy.dev over SFTP instead
-and send the link to the webhoook.
+Script to dump Discord IPAs from an iOS device and upload them to the web.
 
-Disclaimer: I made this for [Enmity](https://enmity.app), to serve my own IPA extraction and uploading needs.
-Feel free to edit the script as needed, but I cannot guarantee support.
+The script does the following:
 
-Originally, this was much more complex, stripping out personal information and using SSH over USB
-with the [old version of frida-ios-dump](https://github.com/miticollo/frida-ios-dump/tree/legacy).
-Since then, miticollo has released a much better version based on Frida's own CLI tooling,
-so my code no longer has to do much heavy lifting.
+1. Extract the IPA from a jailbroken iOS device using [frida-ios-dump](https://github.com/miticollo/frida-ios-dump).
+2. Upload the IPA over SFTP to the VPS hosting https://ipa.aspy.dev.
+3. Send the link to a Discord webhook with the version number.
+
+You must specify in CLI arguments whether the IPA is from the App Store or TestFlight.
+This decides the webhook URL and whether the version information includes the build number (for TestFlight only).
+
+> [!WARNING]
+> I made this for my own purposes, to provide Discord IPAs for [Enmity](https://enmity.unbound.rip).
+> If you'd like to use this for your own IPA extraction purposes, then feel free to edit the script as needed.
+> I've tried to make it reasonably modular.
+> However, I cannot guarantee support.
 
 ## Installing
 
@@ -38,20 +41,24 @@ The variables are:
 
 - `STABLE_WEBHOOK_URL`: webhook URL for uploading stable IPAs
 - `TESTFLIGHT_WEBHOOK_URL`: webhook URL for uploading TestFlight IPAs
-- `VPS_HOSTNAME`: hostname or IP address of the VPS that hosts oversized IPAs
+- `VPS_HOSTNAME`: hostname or IP address of the VPS that hosts the IPAs
 - `VPS_PORT`: SSH port for the VPS
 - `VPS_USERNAME`: username for your account on the VPS
 
-Frida must also be installed on your jailbroken iOS device(s).
+Install Frida your jailbroken iOS device(s) from [Frida's tweak repository](https://build.frida.re).
 
 ## Running
 
 1. Plug your jailbroken iOS device into your computer.
-2. Make sure you have installed the version of Discord that you want to dump.
-3. From this folder on your computer, run `python3 main.py`.
-4. Follow the prompts and wait for it to finish.
+2. Install the version of Discord that you want to extract.
+3. From this folder on your computer, run `python3 main.py` followed by either `-s` (for stable) or `-t` (for TestFlight).
+4. Wait for the script to finish extracting and uploading the IPA.
 
-## Customizing
+## Credits
 
-Any part of this can be edited if you'd like to use this
-but don't have the same requirements as I do.
+Thank you to:
+
+- [Lorenzo Ferron](https://github.com/miticollo) for the [fork of frida-ios-dump](https://github.com/miticollo/frida-ios-dump) that powers decryption in this script
+- [AloneMonkey](https://github.com/AloneMonkey) for the [original](https://github.com/AloneMonkey/frida-ios-dump) frida-ios-dump
+- [Frida's developers](https://frida.re) for the reverse engineering tools that make this possible
+- [Aiden](https://aspy.dev) for hosting the IPAs I upload

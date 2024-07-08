@@ -1,15 +1,17 @@
+import argparse
 import os
 import sys
 from pathlib import Path
+from typing import List
 from zipfile import ZipFile
 import plistlib
+from argparse import ArgumentParser, ArgumentError
 
 from dotenv import load_dotenv
 
 from frida_ios_dump.decrypter import DecrypterApplication
 
 from upload import upload_ipa
-from user_prompt import user_choice
 
 
 def rename_ipa(ipa_path: Path, is_testflight: bool) -> tuple[Path, str, str]:
@@ -40,24 +42,33 @@ def rename_ipa(ipa_path: Path, is_testflight: bool) -> tuple[Path, str, str]:
 
 
 class DiscordDumperApplication(DecrypterApplication):
-    def __init__(self, is_testflight: bool):
-        self.is_testflight = is_testflight
+    def __init__(self):
+        self.is_testflight = False  # May be overridden with args
         super().__init__()
 
+    def _add_options(self, parser: argparse.ArgumentParser) -> None:
+        # Custom arguments for which branch of Discord this is, stable or TestFlight
+        # Application errors if both of these are provided or missing
+        group = parser.add_mutually_exclusive_group(required=True)
+        group.add_argument("-s", "--stable", action="store_true")
+        group.add_argument("-t", "--testflight", action="store_true")
+        super()._add_options(parser)
+
+    def _initialize(self, parser: argparse.ArgumentParser, options: argparse.Namespace, args: List[str]) -> None:
+        self.is_testflight = options.testflight  # Only true if stable is false, and vice versa
+        super()._initialize(parser, options, args)
+
     def _exit(self, exit_status: int) -> None:
-        # Intercept exiting if successful to process the IPA further
+        # Intercept exiting if successful to process the IPA further.
+        # Have to intercept _exit because frida-ios-dump doesn't use _stop.
         if exit_status == 0:
             # Rename output IPA with build ID
             cwd_path = Path(os.getcwd())
             ipa_name = f"{self._bundle_id}_{self._version}.ipa"
             new_ipa_path, version, build = rename_ipa(cwd_path / ipa_name, self.is_testflight)
 
-            try:
-                upload_ipa(new_ipa_path, self.is_testflight, version, build)
-                os.remove(new_ipa_path)
-            except Exception as err:
-                print(err.__traceback__)
-                print(f"Failed to upload {new_ipa_path.name}. Please upload manually.")
+            upload_ipa(new_ipa_path, self.is_testflight, version, build)
+            os.remove(new_ipa_path)
 
         super()._exit(exit_status)
 
@@ -66,24 +77,12 @@ def main():
     # Environment variables specify webhook URLs
     load_dotenv()
 
-    is_testflight = False
-
-    try:
-        # Set is_testflight from arguments
-        flag_idx = sys.argv.index("--testflight")
-        is_testflight = bool(int(sys.argv[flag_idx + 1]))
-        # Clean up args to avoid any interference with Frida
-        sys.argv = sys.argv[:flag_idx] + sys.argv[flag_idx + 2:]
-    except ValueError:
-        # No arguments, so prompt user for TestFlight status
-        is_testflight = bool(user_choice("Is this a TestFlight build?", ["No", "Yes"]))
-
     # Patching sys.argv is terribly hacky, but it works
+    # Custom arguments are handled in the application class
     sys.argv += ["-U", "-f", "com.hammerandchisel.discord"]
 
     # Decrypt the app with Frida over USB
-    app = DiscordDumperApplication(is_testflight)
-    app.run()
+    DiscordDumperApplication().run()
 
 
 if __name__ == '__main__':

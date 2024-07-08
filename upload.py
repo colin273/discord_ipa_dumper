@@ -1,7 +1,6 @@
 import os
 from hashlib import file_digest
 from pathlib import Path
-from shlex import quote
 
 from discord import SyncWebhook, File
 from paramiko import SSHClient
